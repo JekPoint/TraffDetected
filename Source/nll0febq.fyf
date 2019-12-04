@@ -1,0 +1,719 @@
+#include <opencv2/opencv.hpp>
+#include <SharedMemGrabber.h>
+#include <unistd.h>
+#include <Tcl.h>
+#include <chrono>
+#include <ctime>
+
+using namespace cv;
+using namespace std;
+
+typedef struct _TraffickLight
+{
+	bool E1;				//показатель работы фазы
+	bool E1Tcl;
+	int E1C;				//значение красной состовляющей
+	int E1B_D;				//значение белой состовляющей DeadZone
+	int E1B;				//значение белой состовляющей зоны интереса
+	int E1V;				//значение размера овала максимально большой зоны
+	RotatedRect E1RR;		//вращающийся прямоугольник	
+	Point E1V_CENTER;		//центр максимально большой зоны  			
+
+	bool E2;
+	bool E2Tcl;
+	int E2C;
+	int E2B_D;
+	int E2B;
+	int E2V;
+	RotatedRect E2RR;
+	Point E2V_CENTER;										  	
+
+	bool E3;
+	bool E3Tcl;
+	int E3C;
+	int E3B_D;
+	int E3B;
+	int E3V;
+	RotatedRect E3RR;
+	Point E3V_CENTER;										  	
+
+	bool E4;
+	bool E4Tcl;
+	int E4C;
+	int E4B_D;
+	int E4B;
+	int E4V;
+	RotatedRect E4RR;
+	Point E4V_CENTER;										  	
+
+	bool E5;
+	bool E5Tcl;
+	int E5C;
+	int E5B_D;
+	int E5B;
+	int E5V;
+	RotatedRect E5RR;
+	Point E5V_CENTER;										  	
+
+	int RoiGrayGain;
+	int UseErosion;
+
+} TraffickLight;
+
+vector<Rect> ROI;
+vector<Rect> ROItest;
+vector<TraffickLight> TraffMem;
+Mat image;
+Mat Color288x50;
+Mat empty;
+Mat RoiHSV;
+Mat RoiGray;
+Mat RoiContours;
+Mat joinImg;
+bool Debug = true;
+int ShowGraph = 3;					//Глобальный параметр выбора данных графика 0 - цвет, 1- зона детекции 2 - выходные данные
+int pict_height = 288;				//Разрешение входного изображения по высоте
+int pict_width = 400;				//Разрешение входного изображения по ширене
+int channelSharedMemGrabber = 6;	//Номер канала видеозахвата
+int gaussBlur = 21;					//Степень первоначального размытия RoiHSV перед преобразованием в чб
+int RoiGrayGain = 21;				//Степень усилиения/гашения чб перед детекцией 
+int DeadZone = 10;					//Размер квадрата мёртвой зоны в углах зон. В них не должно быть большой яркосной состовляющей
+int thresh = 200;					//Чуствительность детектора ярокстных вспышек области
+int CountFrameTrust = 25;			//Количесвто фреймов необходимое для подтверждения правильности вычисленных  RoiGrayGain, UseErosion.
+Point PointJitterTrust = Point(3,3);
+int UseErosion = 0;					//Сужение больших яркосных пятен
+int E1V, E2V, E3V, E4V, E5V = 0;	
+double fps = 15;
+Mat TmpGray;
+Point E1V_CENTER, E2V_CENTER, E3V_CENTER, E4V_CENTER, E5V_CENTER;
+
+void DrawDataToDebugPic()
+{  
+
+	int E1C = 0;
+	int E2C = 0;
+	int E3C = 0;
+	int E4C = 0;
+	int E5C = 0;								  
+
+	int E1C_1 = 0;
+	int E2C_1 = 0;
+	int E3C_1 = 0;
+	int E4C_1 = 0;
+	int E5C_1 = 0;
+
+	int E1Tcl, E2Tcl, E3Tcl, E4Tcl, E5Tcl = 0;
+	int E1Tcl_1, E2Tcl_1, E3Tcl_1, E4Tcl_1, E5Tcl_1 = 0;
+
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E1C), Point(200, 50),  FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E2C), Point(200, 100), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E3C), Point(200, 150), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E4C), Point(200, 200), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E5C), Point(200, 250), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E1V), Point(200, 40),  FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E2V), Point(200, 90),  FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E3V), Point(200, 140), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E4V), Point(200, 190), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E5V), Point(200, 240), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E1B), Point(200, 30),  FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E2B), Point(200, 80),  FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E3B), Point(200, 130), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E4B), Point(200, 180), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E5B), Point(200, 230), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E1B_D), Point(200, 20),  FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E2B_D), Point(200, 70),  FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E3B_D), Point(200, 120), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E4B_D), Point(200, 170), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].E5B_D), Point(200, 220), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].RoiGrayGain), Point(200, 280), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	putText(joinImg, std::to_string(TraffMem[TraffMem.size()-1].UseErosion), Point(200, 270), FONT_HERSHEY_COMPLEX, 0.4, Scalar::all(255));
+	if (TraffMem[TraffMem.size()-1].E1 == true) circle(joinImg, Point(250,  25), 10, Scalar(0, 0,   230), 20, 9);
+	if (TraffMem[TraffMem.size()-1].E2 == true) circle(joinImg, Point(250,  75), 10, Scalar(0, 179, 255), 20, 9);
+	if (TraffMem[TraffMem.size()-1].E3 == true) circle(joinImg, Point(250, 125), 10, Scalar(0, 102, 0),   20, 9);
+	if (TraffMem[TraffMem.size()-1].E4 == true) circle(joinImg, Point(250, 175), 10, Scalar(0, 30,  230), 20, 9);
+	if (TraffMem[TraffMem.size()-1].E5 == true) circle(joinImg, Point(250, 225), 10, Scalar(0, 30,  230), 20, 9);
+
+	//разметка во входном изображении
+	line(image, Point(ROI[0].x - 1, 0), Point(ROI[0].x - 1, image.rows), Scalar(255, 255, 0), 1, 0);
+	line(image, Point(ROI[0].x + ROI[0].width + 1, 0), Point(ROI[0].x + ROI[0].width + 1, image.rows), Scalar(255, 255, 0), 1, 0);
+	line(image, Point(0, ROI[0].y - 1), Point(image.cols, ROI[0].y - 1), Scalar(255, 255, 0), 1, 0);
+	line(image, Point(0, ROI[0].y + ROI[0].height + 1), Point(image.cols, ROI[0].y + ROI[0].height + 1), Scalar(255, 255, 0), 1, 0);
+
+	//разметка в ROI
+	line(joinImg, Point(0, 50), Point(pict_width, 50), Scalar(255, 255, 0), 0, 0);
+	line(joinImg, Point(0, 100), Point(pict_width, 100), Scalar(255, 255, 0), 0, 0);
+	line(joinImg, Point(0, 150), Point(pict_width, 150), Scalar(255, 255, 0), 0, 0);
+	line(joinImg, Point(0, 200), Point(pict_width, 200), Scalar(255, 255, 0), 0, 0);
+	line(joinImg, Point(0, 250), Point(pict_width, 250), Scalar(255, 255, 0), 0, 0);
+
+	//Отрисовываем историю
+	if (TraffMem.size() > 2)
+	{			
+		for (int i = 0; i< TraffMem.size(); i++)
+		{
+			//график цветной состовляющей
+			if (ShowGraph == 0)
+			{
+				if (TraffMem[i].E1C>500) E1C = 29;
+				else E1C = TraffMem[i].E1C/100;
+
+				if (TraffMem[i].E2C>500) E2C = 29;
+				else E2C = TraffMem[i].E2C/100;
+
+				if (TraffMem[i].E3C>500) E3C = 29;
+				else E3C = TraffMem[i].E3C/100;
+
+				if (TraffMem[i].E4C>500) E4C = 29;
+				else E4C = TraffMem[i].E4C/100;
+
+				if (TraffMem[i].E5C>500) E5C = 29;
+				else E5C = TraffMem[i].E5C/100;
+
+
+				if (TraffMem[i + 1].E1C>500) E1C_1 = 29;
+				else E1C_1 = TraffMem[i + 1].E1C/100;
+
+				if (TraffMem[i + 1].E2C>500) E2C_1 = 29;
+				else E2C_1 = TraffMem[i + 1].E2C/100;
+
+				if (TraffMem[i + 1].E3C>500) E3C_1 = 29;
+				else E3C_1 = TraffMem[i + 1].E3C/100;
+
+				if (TraffMem[i + 1].E4C>500) E4C_1 = 29;
+				else E4C_1 = TraffMem[i + 1].E4C/100;
+
+				if (TraffMem[i + 1].E5C>500) E5C_1 = 29;
+				else E5C_1 = TraffMem[i + 1].E5C/100;
+			}
+			//график колебания центра зоны интереса
+			if (ShowGraph == 1)
+			{
+				if (TraffMem[i].E1V_CENTER.y > 0) E1C = ((TraffMem[i].E1V_CENTER.y + (TraffMem[i].E1V_CENTER.x - 150)) / 4) + 50;
+				else E1C = 0;
+
+				if (TraffMem[i].E2V_CENTER.y > 0) E2C = (((TraffMem[i].E2V_CENTER.y - 50) + (TraffMem[i].E2V_CENTER.x - 150)) / 4) + 50;
+				else E2C = 0;
+
+				if (TraffMem[i].E3V_CENTER.y > 0) E3C = (((TraffMem[i].E3V_CENTER.y - 100) + (TraffMem[i].E3V_CENTER.x - 150)) / 4) + 50;
+				else E3C = 0;
+
+				if (TraffMem[i].E4V_CENTER.y > 0) E4C = (((TraffMem[i].E4V_CENTER.y - 150) + (TraffMem[i].E4V_CENTER.x - 150)) / 4) + 50;
+				else E4C = 0;
+
+				if (TraffMem[i].E5V_CENTER.y > 0) E5C = (((TraffMem[i].E5V_CENTER.y - 200) + (TraffMem[i].E5V_CENTER.x - 150)) / 4) + 50;
+				else E5C = 0;
+
+
+				if (TraffMem[i + 1].E1V_CENTER.y > 0) E1C_1 = ((TraffMem[i + 1].E1V_CENTER.y + (TraffMem[i + 1].E1V_CENTER.x - 150)) / 4) + 50;
+				else E1C_1 = 0;
+
+				if (TraffMem[i + 1].E2V_CENTER.y > 0) E2C_1 = (((TraffMem[i + 1].E2V_CENTER.y - 50) + (TraffMem[i + 1].E2V_CENTER.x - 150)) / 4) + 50;
+				else E2C_1 = 0;
+
+				if (TraffMem[i + 1].E3V_CENTER.y > 0) E3C_1 = (((TraffMem[i + 1].E3V_CENTER.y - 100) + (TraffMem[i + 1].E3V_CENTER.x - 150)) / 4) + 50;
+				else E3C_1 = 0;
+
+				if (TraffMem[i + 1].E4V_CENTER.y > 0) E4C_1 = (((TraffMem[i + 1].E4V_CENTER.y - 150) + (TraffMem[i + 1].E4V_CENTER.x - 150)) / 4) + 50;
+				else E4C_1 = 0;
+
+				if (TraffMem[i + 1].E5V_CENTER.y > 0) E5C_1 = (((TraffMem[i + 1].E5V_CENTER.y - 200) + (TraffMem[i + 1].E5V_CENTER.x - 150)) / 4) + 50;
+				else E5C_1 = 0;
+
+			}
+			if (ShowGraph == 2)
+			{
+				if (TraffMem[i].E1 == true) E1C = 25; else E1C = 0;
+				if (TraffMem[i].E2 == true) E2C = 25; else E2C = 0;
+				if (TraffMem[i].E3 == true) E3C = 25; else E3C = 0;	
+				if (TraffMem[i].E4 == true) E4C = 25; else E4C = 0;
+				if (TraffMem[i].E5 == true) E5C = 25; else E5C = 0;
+				
+				if (TraffMem[i + 1].E1 == true) E1C_1 = 25; else E1C_1 = 0;
+				if (TraffMem[i + 1].E2 == true) E2C_1 = 25; else E2C_1 = 0;
+				if (TraffMem[i + 1].E3 == true) E3C_1 = 25; else E3C_1 = 0;
+				if (TraffMem[i + 1].E4 == true) E4C_1 = 25; else E4C_1 = 0;
+				if (TraffMem[i + 1].E5 == true) E5C_1 = 25; else E5C_1 = 0;
+			}
+			if (ShowGraph == 3)
+			{
+				
+				if (TraffMem[i].E1 == true) E1C = 23;  else E1C = 0;
+				if (TraffMem[i].E2 == true) E2C = 23;  else E2C = 0;
+				if (TraffMem[i].E3 == true) E3C = 23;  else E3C = 0; 
+				if (TraffMem[i].E4 == true) E4C = 23;  else E4C = 0;
+				if (TraffMem[i].E5 == true) E5C = 23;  else E5C = 0;
+				if (TraffMem[i + 1].E1 == true) E1C_1 = 23; else E1C_1 = 0;	
+				if (TraffMem[i + 1].E2 == true) E2C_1 = 23; else E2C_1 = 0;
+				if (TraffMem[i + 1].E3 == true) E3C_1 = 23; else E3C_1 = 0;	
+				if (TraffMem[i + 1].E4 == true) E4C_1 = 23; else E4C_1 = 0;	
+				if (TraffMem[i + 1].E5 == true) E5C_1 = 23;	else E5C_1 = 0;	   
+				
+				if (TraffMem[i].E1Tcl == true) E1Tcl = 23;  else E1Tcl = 0;
+				if (TraffMem[i].E2Tcl == true) E2Tcl = 23;  else E2Tcl = 0;
+				if (TraffMem[i].E3Tcl == true) E3Tcl = 23;  else E3Tcl = 0;
+				if (TraffMem[i].E4Tcl == true) E4Tcl = 23;  else E4Tcl = 0;
+				if (TraffMem[i].E5Tcl == true) E5Tcl = 23;  else E5Tcl = 0;
+				if (TraffMem[i + 1].E1Tcl == true) E1Tcl_1 = 23; else E1Tcl_1 = 0;
+				if (TraffMem[i + 1].E2Tcl == true) E2Tcl_1 = 23; else E2Tcl_1 = 0;
+				if (TraffMem[i + 1].E3Tcl == true) E3Tcl_1 = 23; else E3Tcl_1 = 0;
+				if (TraffMem[i + 1].E4Tcl == true) E4Tcl_1 = 23; else E4Tcl_1 = 0;
+				if (TraffMem[i + 1].E5Tcl == true) E5Tcl_1 = 23; else E5Tcl_1 = 0; 
+
+				
+
+				line(joinImg, Point(i + 270, E1Tcl_1), Point(i + 270, E1Tcl), Scalar(10, 255, 203), 0, 0);
+				line(joinImg, Point(i + 270, 51 + E2Tcl_1), Point(i + 270, 51 + E2Tcl), Scalar(10, 255, 203), 0, 0);
+				line(joinImg, Point(i + 270, 101 + E3Tcl_1), Point(i + 270, 101 + E3Tcl), Scalar(10, 255, 203), 0, 0);
+				line(joinImg, Point(i + 270, 151 + E4Tcl_1), Point(i + 270, 151 + E4Tcl), Scalar(10, 255, 203), 0, 0);
+				line(joinImg, Point(i + 270, 201 + E5Tcl_1), Point(i + 270, 201 + E5Tcl), Scalar(10, 255, 203), 0, 0);
+				
+			}
+			line(joinImg,
+				Point(i + 270, 50 - E1C_1),
+				Point(i + 270, 50 - E1C),
+				Scalar(255, 150, 20), 0, 0);
+			line(joinImg,
+				Point(i + 270, 100 - E2C_1),
+				Point(i + 270, 100 - E2C),
+				Scalar(255, 150, 20), 0, 0);
+			line(joinImg,
+				Point(i + 270, 150 - E3C_1),
+				Point(i + 270, 150 - E3C),
+				Scalar(255, 150, 20), 0, 0);
+			line(joinImg,
+				Point(i + 270, 200 - E4C_1),
+				Point(i + 270, 200 - E4C),
+				Scalar(255, 150, 20), 0, 0);
+			line(joinImg,
+				Point(i + 270, 250 - E5C_1),
+				Point(i + 270, 250 - E5C),
+				Scalar(255, 150, 20), 0, 0);
+			line(joinImg,
+				Point(i + 270, 288 - (TraffMem[i + 1].RoiGrayGain)),
+				Point(i + 270, 288 - (TraffMem[i].RoiGrayGain)),
+				Scalar(255, 150, 20), 0, 0);
+			line(joinImg,
+				Point(i + 270, 250 + (TraffMem[i + 1].UseErosion * 2)),
+				Point(i + 270, 250 + (TraffMem[i].UseErosion * 2)),
+				Scalar(0, 0, 255), 0, 0);			
+		}
+	}
+}
+
+void findContours()
+{
+	E1V = E2V = E3V = E4V = E5V = 0;
+	E1V_CENTER = E2V_CENTER = E3V_CENTER = E4V_CENTER = E5V_CENTER = Point(0, 0);
+	Scalar color = Scalar(255, 255, 0);
+	Mat threshold_output;
+	vector<vector<Point>> contours;
+	vector<Vec4i> hierarchy;
+	blur(RoiGray, RoiGray, Size(3, 3));
+	threshold(RoiGray, threshold_output, thresh, 255, THRESH_BINARY);
+	findContours(threshold_output, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0));
+	vector<RotatedRect> minRect(contours.size());
+	vector<RotatedRect> minEllipse(contours.size());
+
+	for (size_t i = 0; i < contours.size(); i++)
+	{
+		minRect[i] = minAreaRect(Mat(contours[i]));
+		if (contours[i].size() > 5)
+		{
+			minEllipse[i] = fitEllipse(Mat(contours[i]));
+		}
+	}
+	RoiContours = Mat::zeros(threshold_output.size(), CV_8UC3);
+	for (size_t i = 0; i< contours.size(); i++)
+	{
+		RotatedRect rRect = minEllipse[i];
+		if ((rRect.center.y >(0 + DeadZone)) && (rRect.center.y < (50 - DeadZone)) && (rRect.center.x > DeadZone) && (rRect.center.x < (50 - DeadZone)))
+		{
+			if (E1V < (rRect.size.height + rRect.size.width))
+			{
+				E1V = rRect.size.height + rRect.size.width;
+				E1V_CENTER = rRect.center;
+				ellipse(RoiContours, rRect, color, 2, 8);
+				ellipse(RoiContours, rRect.center, cv::Size(1, 1), 1, 1, 1, color, 2, 8);
+			}
+		}
+		if ((rRect.center.y >(50 + DeadZone)) && (rRect.center.y < (100 - DeadZone)) && (rRect.center.x > DeadZone) && (rRect.center.x < (50 - DeadZone)))
+		{
+			if (E2V < (rRect.size.height + rRect.size.width))
+			{
+				E2V = rRect.size.height + rRect.size.width;
+				E2V_CENTER = rRect.center;
+				ellipse(RoiContours, rRect, color, 2, 8);
+				ellipse(RoiContours, rRect.center, cv::Size(1, 1), 1, 1, 1, color, 2, 8);
+			}
+		}
+		if ((rRect.center.y >(100 + DeadZone)) && (rRect.center.y < (150 - DeadZone)) && (rRect.center.x > DeadZone) && (rRect.center.x < (50 - DeadZone)))
+		{
+			if (E3V < (rRect.size.height + rRect.size.width))
+			{
+				E3V = rRect.size.height + rRect.size.width;
+				E3V_CENTER = rRect.center;
+				ellipse(RoiContours, rRect, color, 2, 8);
+				ellipse(RoiContours, rRect.center, cv::Size(1, 1), 1, 1, 1, color, 2, 8);
+			}
+		}
+		if ((rRect.center.y >(150 + DeadZone)) && (rRect.center.y < (200 - DeadZone)) && (rRect.center.x > DeadZone) && (rRect.center.x < (50 - DeadZone)))
+		{
+			if (E4V < (rRect.size.height + rRect.size.width))
+			{
+				E4V = rRect.size.height + rRect.size.width;
+				E4V_CENTER = rRect.center;
+				ellipse(RoiContours, rRect, color, 2, 8);
+				ellipse(RoiContours, rRect.center, cv::Size(1, 1), 1, 1, 1, color, 2, 8);
+			}
+		}
+		if ((rRect.center.y >(200 + DeadZone)) && (rRect.center.y < (250 - DeadZone)) && (rRect.center.x > DeadZone) && (rRect.center.x < (50 - DeadZone)))
+		{
+			if (E5V < (rRect.size.height + rRect.size.width))
+			{
+				E5V = rRect.size.height + rRect.size.width;
+				E5V_CENTER = rRect.center;
+				ellipse(RoiContours, rRect, color, 2, 8);
+				ellipse(RoiContours, rRect.center, cv::Size(1, 1), 1, 1, 1, color, 2, 8);
+			}
+		}
+	}
+}
+
+void findContours(Mat GrayPicIn)
+{
+	E1V = E2V = E3V = E4V = E5V = 0;
+	E1V_CENTER = E2V_CENTER = E3V_CENTER = E4V_CENTER = E5V_CENTER = Point(0, 0);
+	Scalar color = Scalar(255, 255, 0);
+	Mat threshold_output;
+	vector<vector<Point>> contours;
+	vector<Vec4i> hierarchy;
+	blur(GrayPicIn, GrayPicIn, Size(3, 3));
+	threshold(GrayPicIn, threshold_output, thresh, 255, THRESH_BINARY);
+	findContours(threshold_output, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0));
+	vector<RotatedRect> minRect(contours.size());
+	vector<RotatedRect> minEllipse(contours.size());
+
+	for (size_t i = 0; i < contours.size(); i++)
+	{
+		minRect[i] = minAreaRect(Mat(contours[i]));
+		if (contours[i].size() > 5)
+		{
+			minEllipse[i] = fitEllipse(Mat(contours[i]));
+		}
+	}
+	RoiContours = Mat::zeros(threshold_output.size(), CV_8UC3);
+	for (size_t i = 0; i< contours.size(); i++)
+	{
+		RotatedRect rRect = minEllipse[i];
+		if ((rRect.center.y >(0 + DeadZone)) && (rRect.center.y < (50 - DeadZone)) && (rRect.center.x > DeadZone) && (rRect.center.x < (50 - DeadZone)))
+		{
+			if (E1V < (rRect.size.height + rRect.size.width))
+			{
+				E1V = rRect.size.height + rRect.size.width;
+				E1V_CENTER = rRect.center;
+				//ellipse(RoiContours, rRect, color, 2, 8);
+				//ellipse(RoiContours, rRect.center, cv::Size(1, 1), 1, 1, 1, color, 2, 8);
+			}
+		}
+		if ((rRect.center.y >(50 + DeadZone)) && (rRect.center.y < (100 - DeadZone)) && (rRect.center.x > DeadZone) && (rRect.center.x < (50 - DeadZone)))
+		{
+			if (E2V < (rRect.size.height + rRect.size.width))
+			{
+				E2V = rRect.size.height + rRect.size.width;
+				E2V_CENTER = rRect.center;
+				//ellipse(RoiContours, rRect, color, 2, 8);
+				//ellipse(RoiContours, rRect.center, cv::Size(1, 1), 1, 1, 1, color, 2, 8);
+			}
+		}
+		if ((rRect.center.y >(100 + DeadZone)) && (rRect.center.y < (150 - DeadZone)) && (rRect.center.x > DeadZone) && (rRect.center.x < (50 - DeadZone)))
+		{
+			if (E3V < (rRect.size.height + rRect.size.width))
+			{
+				E3V = rRect.size.height + rRect.size.width;
+				E3V_CENTER = rRect.center;
+				//ellipse(RoiContours, rRect, color, 2, 8);
+				//ellipse(RoiContours, rRect.center, cv::Size(1, 1), 1, 1, 1, color, 2, 8);
+			}
+		}
+		if ((rRect.center.y >(150 + DeadZone)) && (rRect.center.y < (200 - DeadZone)) && (rRect.center.x > DeadZone) && (rRect.center.x < (50 - DeadZone)))
+		{
+			if (E4V < (rRect.size.height + rRect.size.width))
+			{
+				E4V = rRect.size.height + rRect.size.width;
+				E4V_CENTER = rRect.center;
+				//ellipse(RoiContours, rRect, color, 2, 8);
+				//ellipse(RoiContours, rRect.center, cv::Size(1, 1), 1, 1, 1, color, 2, 8);
+			}
+		}
+		if ((rRect.center.y >(200 + DeadZone)) && (rRect.center.y < (250 - DeadZone)) && (rRect.center.x > DeadZone) && (rRect.center.x < (50 - DeadZone)))
+		{
+			if (E5V < (rRect.size.height + rRect.size.width))
+			{
+				E5V = rRect.size.height + rRect.size.width;
+				E5V_CENTER = rRect.center;
+				//ellipse(RoiContours, rRect, color, 2, 8);
+				//ellipse(RoiContours, rRect.center, cv::Size(1, 1), 1, 1, 1, color, 2, 8);
+			}
+		}
+	}
+}
+
+int main(int argc, char *argv[])
+{
+
+	ROI.push_back(Rect(196, 49, 80, 80));
+	ROI.push_back(Rect(196, 126, 80, 80));
+	ROI.push_back(Rect(196, 202, 80, 80));
+	//ROI.push_back(Rect(196, 49, 80, 80));
+	//ROI.push_back(Rect(196, 202, 80, 80));
+
+	ROItest.push_back(Rect(196, 80, 50, 50));
+	ROItest.push_back(Rect(196, 130, 50, 50));
+	ROItest.push_back(Rect(196, 180, 50, 50));
+	ROItest.push_back(Rect(196, 180, 50, 50));
+	ROItest.push_back(Rect(196, 180, 50, 50));
+
+	SharedMemGrabber grab(pict_width, pict_height, 10077 + channelSharedMemGrabber * 2);
+	SharedMemGrabber outgrab(pict_width, pict_height + 96, 10077 + 23 * 2);
+	VideoCapture video08("/home/user/08-00.avi");
+	cout << "Start grab video" << endl;
+	TraffickLight TrLi;
+	TclState state;
+	
+	memset(&TrLi, 0, sizeof(TraffickLight));
+	int frame_n = 0;
+	while (true)
+	{
+		if (!grab.getNextFrame()){ usleep(1000); continue; }
+		image = Mat(pict_height, pict_width, CV_8UC2, grab.last_frame_videobuf);
+		cvtColor(image, image, CV_YUV2BGR_YUY2);
+		frame_n++;
+		cout << "Frame input " << frame_n << " image " << image.cols << "x" << image.rows << endl;
+		//клеем все части картинок
+		Color288x50 = Mat(1, 50, CV_8UC3) * 0;
+		RoiHSV = Mat(1, 50, CV_8UC3) * 0;
+		Mat roi;
+		Mat roiHSV = Mat(50, 50, CV_8UC3);
+		empty = Mat(50, 50, CV_8UC3) * 0;
+		vector<Mat> Layer;
+		for (int i = 0; i<5; i++)
+		{
+			if (ROI.size() >i)
+			{
+				//клеем цветную картинку
+				roi = Mat(50, 50, CV_8UC3);
+				resize(image(ROI[i]), roi, roi.size(), 0, 0, CV_INTER_LINEAR);
+				vconcat(Color288x50, roi, Color288x50);
+
+				//преобразуем и клеем HSV
+				roi = Mat(image(ROI[i]).size(), CV_8UC3);
+				cvtColor(image(ROI[i]), roi, CV_BGR2HSV);  //преобразуем цвет из BGR в HSV
+				resize(roi, roiHSV, roiHSV.size(), 0, 0, CV_INTER_CUBIC);
+
+				vconcat(RoiHSV, roiHSV, RoiHSV);
+			}
+			else
+			{
+				vconcat(Color288x50, empty, Color288x50);
+				vconcat(RoiHSV, empty, RoiHSV);
+			}
+		}
+		
+		empty = Mat(37, 50, CV_8UC3) * 0;
+		vconcat(Color288x50, empty, Color288x50);   //клеем пустое поле
+		vconcat(RoiHSV, empty, RoiHSV);				//клеем пустое поле	
+		TraffMem.push_back(TrLi);					//записываем предидущее состояние светофора	
+		if (TraffMem.size() > 120) TraffMem.erase(TraffMem.begin()); //устанавливаем длину истории работы светофора в 120 кадров 
+
+		TrLi.E1 = TrLi.E2 = TrLi.E3 = TrLi.E4 = TrLi.E5 = 0;
+		TrLi.E1C = TrLi.E2C = TrLi.E3C = TrLi.E4C = TrLi.E5C = 0;
+		TrLi.E1V = TrLi.E2V = TrLi.E3V = TrLi.E4V = TrLi.E5V = 0;
+		TrLi.E1B = TrLi.E2B = TrLi.E3B = TrLi.E4B = TrLi.E5B = 0;
+		TrLi.E1B_D = TrLi.E2B_D = TrLi.E3B_D = TrLi.E4B_D = TrLi.E5B_D = 0;
+		TrLi.E1V_CENTER = TrLi.E2V_CENTER = TrLi.E3V_CENTER = TrLi.E4V_CENTER = TrLi.E5V_CENTER = Point(0, 0);
+		
+		uint8_t* pixelPtr = (uint8_t*)RoiHSV.data;
+		int cn = RoiHSV.channels();
+		for (int j = 0; j < RoiHSV.cols; j++)
+		{
+			for (int i = 0; i < 50; i++)    if (pixelPtr[i*RoiHSV.cols*cn + j*cn + 2] > 240) TrLi.E1C++;
+			for (int i = 50; i < 100; i++)  if (pixelPtr[i*RoiHSV.cols*cn + j*cn + 2] > 240) TrLi.E2C++;
+			for (int i = 100; i < 150; i++) if (pixelPtr[i*RoiHSV.cols*cn + j*cn + 2] > 240) TrLi.E3C++;
+			for (int i = 150; i < 200; i++) if (pixelPtr[i*RoiHSV.cols*cn + j*cn + 2] > 240) TrLi.E4C++;
+			for (int i = 200; i < 250; i++) if (pixelPtr[i*RoiHSV.cols*cn + j*cn + 2] > 240) TrLi.E5C++;
+		}
+
+		if (gaussBlur % 2 != 0)
+			GaussianBlur(RoiHSV, RoiHSV, Size(gaussBlur, gaussBlur), 0, 0);
+		
+		split(RoiHSV, Layer);
+
+		RoiGray = Layer[1] * 0.7;
+		RoiGray = RoiGray*0.5 + TmpGray	*0.5;
+		TmpGray = Layer[1] * 0.7;
+
+		//если значение красной состовляющей больше 500 пикселей на зону то считаем это сработкой
+		RoiGrayGain = 21;
+		TrLi.UseErosion = 0;
+
+		Mat RoiGrayTmp;
+		if (TrLi.E1C > 500) { TrLi.E1 = 1; RoiGrayGain = 1;}
+		if (TrLi.E2C > 500) { TrLi.E2 = 1; RoiGrayGain = 1;}
+		if (TrLi.E3C > 500) { TrLi.E3 = 1; RoiGrayGain = 1;}
+		if (TrLi.E4C > 500) { TrLi.E4 = 1; RoiGrayGain = 1;}
+		if (TrLi.E5C > 500) { TrLi.E5 = 1; RoiGrayGain = 1;}
+
+		//стабилизируем яркость картинки выбирая угловые зоны как самые не значимые	
+		for (int b = 0; b < RoiGrayGain; b++)
+		{
+			TrLi.E1B = TrLi.E2B = TrLi.E3B = TrLi.E4B = TrLi.E5B = 0;
+			TrLi.E1B_D = TrLi.E2B_D = TrLi.E3B_D = TrLi.E4B_D = TrLi.E5B_D = 0;
+			TrLi.E1V_CENTER = TrLi.E2V_CENTER = TrLi.E3V_CENTER = TrLi.E4V_CENTER = TrLi.E5V_CENTER = Point(0, 0);
+			RoiGrayTmp = RoiGray * (RoiGrayGain / 5);
+
+			for (size_t i = 0; i < TrLi.UseErosion; i++)
+			{
+				int erosion_type;
+				int erosion_size = 2;
+				Mat element = getStructuringElement(MORPH_ELLIPSE, Size(2 * erosion_size + 1, 2 * erosion_size + 1), Point(erosion_size, erosion_size));
+				erode(RoiGrayTmp, RoiGrayTmp, element);
+			} 			
+
+			for (int j = 0; j < RoiGrayTmp.cols; j++)
+			{
+				for (int i = 0; i < 50; i++)    if (((i < DeadZone + 0) || (i > 50 - DeadZone)) && ((j < DeadZone) || (j  > 50 - DeadZone)))
+				{
+					ellipse(Color288x50, cv::Point(i, j), cv::Size(1, 1), 1, 1, 1, Scalar(255, 255, 0), 1, 1);
+					if (RoiGrayTmp.at<uchar>(i, j) > 200) TrLi.E1B_D++;
+				}
+				else if (RoiGrayTmp.at<uchar>(i, j) > 200) TrLi.E1B++;
+
+				for (int i = 50; i < 100; i++)  if (((i < DeadZone + 50) || (i > 100 - DeadZone)) && ((j < DeadZone) || (j  > 50 - DeadZone)))
+				{
+					if (RoiGrayTmp.at<uchar>(i, j) > 200) TrLi.E2B_D++;
+				}
+				else if (RoiGrayTmp.at<uchar>(i, j) > 200) TrLi.E2B++;
+
+				for (int i = 100; i < 150; i++) if (((i < DeadZone + 100) || (i > 150 - DeadZone)) && ((j < DeadZone) || (j  > 50 - DeadZone)))
+				{
+					if (RoiGrayTmp.at<uchar>(i, j) > 200) TrLi.E3B_D++;
+				}
+				else if (RoiGrayTmp.at<uchar>(i, j) > 200) TrLi.E3B++;
+
+				for (int i = 150; i < 200; i++) if (((i < DeadZone + 150) || (i > 200 - DeadZone)) && ((j < DeadZone) || (j  > 50 - DeadZone)))
+				{
+					if (RoiGrayTmp.at<uchar>(i, j) > 200) TrLi.E4B_D++;
+				}
+				else if (RoiGrayTmp.at<uchar>(i, j) > 200) TrLi.E4B++;
+
+				for (int i = 200; i < 250; i++) if (((i < DeadZone + 200) || (i > 250 - DeadZone)) && ((j < DeadZone) || (j  > 50 - DeadZone)))
+				{
+					if (RoiGrayTmp.at<uchar>(i, j) > 200) TrLi.E5B_D++;
+				}
+				else if (RoiGrayTmp.at<uchar>(i, j) > 200) TrLi.E5B++;
+			}
+
+			if ((TrLi.E1B > 600) || (TrLi.E2B > 600) || (TrLi.E3B > 600) || (TrLi.E4B > 600) || (TrLi.E5B > 600))
+			{
+				TrLi.UseErosion++;
+			}
+			else
+			{
+				findContours(RoiGrayTmp);																					//ищем контуры ярких пятен
+				if ((TrLi.E1B_D > 10) || (TrLi.E2B_D > 10) || (TrLi.E3B_D > 10) || (TrLi.E4B_D > 10) || (TrLi.E5B_D > 10))	//Проверяем количество ярких пикселов в мёртвой зоне
+				{
+					if ((TrLi.E1C < 1) || (TrLi.E2C < 1) || (TrLi.E3C < 1) || (TrLi.E4C < 1) || (TrLi.E5C < 1))				//проверяем количество красных пикселов
+						RoiGrayGain--;																						//если их слишком много приглушаем яркость
+				}
+				else if ((E1V > 100) || (E2V > 100) || (E3V > 100) || (E4V > 100) || (E5V > 100))
+				{
+					RoiGrayGain--;
+				}
+				else
+				{
+					TrLi.RoiGrayGain = RoiGrayGain;
+					b = RoiGrayGain + 1;
+				}
+			} 			
+		}
+
+
+		RoiGrayGain = 0;
+		UseErosion = 0;
+		RoiGray = RoiGray * (TrLi.RoiGrayGain / 5);
+		for (size_t i = 0; i < TrLi.UseErosion; i++)
+		{
+			int erosion_type;
+			int erosion_elem = 2;
+			int erosion_size = 2;
+			if (erosion_elem == 0){ erosion_type = MORPH_RECT; }
+			else if (erosion_elem == 1){ erosion_type = MORPH_CROSS; }
+			else if (erosion_elem == 2) { erosion_type = MORPH_ELLIPSE; }
+			Mat element = getStructuringElement(erosion_type, Size(2 * erosion_size + 1, 2 * erosion_size + 1), Point(erosion_size, erosion_size));
+			erode(RoiGray, RoiGray, element);
+		}
+
+		findContours();
+
+		if (E1V > 10) { TrLi.E1 = 1; RoiGrayGain = 1; TrLi.E1V_CENTER = E1V_CENTER; }
+		if (E2V > 10) { TrLi.E2 = 1; RoiGrayGain = 1; TrLi.E2V_CENTER = E2V_CENTER; }
+		if (E3V > 10) { TrLi.E3 = 1; RoiGrayGain = 1; TrLi.E3V_CENTER = E3V_CENTER; }
+		if (E4V > 10) { TrLi.E4 = 1; RoiGrayGain = 1; TrLi.E4V_CENTER = E4V_CENTER; }
+		if (E5V > 10) { TrLi.E5 = 1; RoiGrayGain = 1; TrLi.E5V_CENTER = E5V_CENTER; }
+
+		TrLi.E1V = E1V;
+		TrLi.E2V = E2V;
+		TrLi.E3V = E3V;
+		TrLi.E4V = E4V;
+		TrLi.E5V = E5V;
+
+		TrLi.E1Tcl = state.getstate(2);
+		TrLi.E2Tcl = state.getstate(3);
+		hconcat(Color288x50, RoiHSV, joinImg);
+		cvtColor(RoiGray, RoiGray, CV_GRAY2RGB);
+		hconcat(joinImg, RoiGray, joinImg);
+		hconcat(joinImg, RoiContours, joinImg);
+		empty = Mat(pict_height, pict_width - 200, CV_8UC3) * 0;
+		hconcat(joinImg, empty, joinImg);
+		empty = Mat(96, pict_width, CV_8UC3) * 0;
+		vconcat(joinImg, empty, joinImg);
+
+		DrawDataToDebugPic();
+
+		cvtColor(joinImg, joinImg, CV_BGR2YUV);
+		outgrab.frame_meta->Grabbed = 0;
+		for (int o = 0; o<pict_width*pict_height / 2; o++)
+		{
+			outgrab.videobuf[o * 4] = joinImg.data[o * 6];
+			outgrab.videobuf[o * 4 + 1] = (u_int8_t)((joinImg.data[o * 6 + 2] + joinImg.data[o * 6 + 5]) / 2);
+			outgrab.videobuf[o * 4 + 2] = joinImg.data[o * 6 + 3];
+			outgrab.videobuf[o * 4 + 3] = (u_int8_t)((joinImg.data[o * 6 + 1] + joinImg.data[o * 6 + 4]) / 2);
+		}
+		
+		//cout << outgrab.frame_meta->NFrame << "Pic out " << joinImg.cols << "x" << joinImg.rows << endl;
+		outgrab.frame_meta->NFrame++;
+		outgrab.frame_meta->Grabbed = 1;
+		if (Debug == true)
+		{
+			tm localTime;
+			std::chrono::system_clock::time_point t = std::chrono::system_clock::now();
+			time_t now = std::chrono::system_clock::to_time_t(t);
+			localtime_r(&now, &localTime); 
+			const std::chrono::duration<double> tse = t.time_since_epoch();
+			std::chrono::seconds::rep milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(tse).count() % 1000;
+
+
+			string FileNameToOut ="/odissey-data/TraffLag/" + (1900 + localTime.tm_year) + '-' + (localTime.tm_mon + 1) + '-' + localTime.tm_mday << ' ' 
+				+ localTime.tm_hour + '-' + localTime.tm_min + '-' + localTime.tm_sec << '-' + milliseconds  + ".jpg";
+			if (TrLi.E1Tcl != TrLi.E1 || TrLi.E2Tcl != TrLi.E2 || TrLi.E3Tcl != TrLi.E3 || TrLi.E4Tcl != TrLi.E4 || TrLi.E5Tcl != TrLi.E5)
+			{
+				imwrite(FileNameToOut, joinImg);
+			}
+		}
+	}
+	return 0;
+}

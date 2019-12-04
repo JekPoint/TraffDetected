@@ -1,0 +1,57 @@
+﻿Сборка начата 3/14/2016 2:56:58 PM.
+     1>Проект "C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Traff.vcxproj" в узле 2 (целевые объекты Build).
+     1>Build:
+         "C:\Program Files (x86)\Sysprogs\VisualGDB\\VisualGDB.exe" /build "C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Traff.vcxproj" "/solution:C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Traff.sln" "/config:Release" "/platform:Win32"
+         VisualGDB: Sending 19 updated source files to build machine...
+         VisualGDB: Run "make CONFIG=Release" in directory "/tmpfs" on root@192.168.24.136 (SSH)
+         mkdir Release
+         g++ -ggdb -ffunction-sections -O3 -std=c++11 -I./Source -DNDEBUG -DRELEASE  -I/usr/local/include/opencv -I/usr/local/include   -c Source/imusoconn.cpp -o Release/imusoconn.o -MD -MF Release/imusoconn.dep
+         Source/imusoconn.cpp: In function 'void init_commands_list()':
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(298,99): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(298,99): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(299,102): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(299,102): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(300,106): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(300,106): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(301,115): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(301,115): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(302,92): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(302,92): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(303,99): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(303,99): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(304,99): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(304,99): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(305,99): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(305,99): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(306,99): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(306,99): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(307,95): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(307,95): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(308,95): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(308,95): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(309,90): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(309,90): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(310,96): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(310,96): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(311,84): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(311,84): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(312,101): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(312,101): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(313,97): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(313,97): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(314,97): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(314,97): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+         Source/imusoconn.cpp: In member function 'int imusoconn::imuso(int, char**)':
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(357,19): warning : deprecated conversion from string constant to 'char*' [-Wwrite-strings]
+     1>C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Source\imusoconn.cpp(442,22): warning : ignoring return value of 'ssize_t write(int, const void*, size_t)', declared with attribute warn_unused_result [-Wunused-result]
+         g++ -ggdb -ffunction-sections -O3 -std=c++11 -I./Source -DNDEBUG -DRELEASE  -I/usr/local/include/opencv -I/usr/local/include   -c Source/ini.cpp -o Release/ini.o -MD -MF Release/ini.dep
+         g++ -ggdb -ffunction-sections -O3 -std=c++11 -I./Source -DNDEBUG -DRELEASE  -I/usr/local/include/opencv -I/usr/local/include   -c Source/INIReader.cpp -o Release/INIReader.o -MD -MF Release/INIReader.dep
+         g++ -ggdb -ffunction-sections -O3 -std=c++11 -I./Source -DNDEBUG -DRELEASE  -I/usr/local/include/opencv -I/usr/local/include   -c Source/SharedMemGrabber.cpp -o Release/SharedMemGrabber.o -MD -MF Release/SharedMemGrabber.dep
+         g++ -ggdb -ffunction-sections -O3 -std=c++11 -I./Source -DNDEBUG -DRELEASE  -I/usr/local/include/opencv -I/usr/local/include   -c Source/Tcl.cpp -o Release/Tcl.o -MD -MF Release/Tcl.dep
+         g++ -ggdb -ffunction-sections -O3 -std=c++11 -I./Source -DNDEBUG -DRELEASE  -I/usr/local/include/opencv -I/usr/local/include   -c Source/Traff.cpp -o Release/Traff.o -MD -MF Release/Traff.dep
+         g++ -o Release/Traff -Wl,-gc-sections -std=c++11   -Wl,--start-group Release/imusoconn.o Release/ini.o Release/INIReader.o Release/SharedMemGrabber.o Release/Tcl.o Release/Traff.o   -Wl,--rpath='$ORIGIN'  /usr/local/lib/libopencv_calib3d.so /usr/local/lib/libopencv_contrib.so /usr/local/lib/libopencv_core.so /usr/local/lib/libopencv_features2d.so /usr/local/lib/libopencv_flann.so /usr/local/lib/libopencv_gpu.so /usr/local/lib/libopencv_highgui.so /usr/local/lib/libopencv_imgproc.so /usr/local/lib/libopencv_legacy.so /usr/local/lib/libopencv_ml.so /usr/local/lib/libopencv_nonfree.so /usr/local/lib/libopencv_objdetect.so /usr/local/lib/libopencv_ocl.so /usr/local/lib/libopencv_photo.so /usr/local/lib/libopencv_stitching.so /usr/local/lib/libopencv_superres.so /usr/local/lib/libopencv_ts.a /usr/local/lib/libopencv_video.so /usr/local/lib/libopencv_videostab.so -lrt -lpthread -lm -ldl    -Wl,--end-group
+     1>Сборка проекта "C:\Users\Jek\Desktop\WORK\Dropbox\Traff\Traff.vcxproj" завершена (целевые объекты Build).
+
+Сборка успешно завершена.
+
+Затраченное время: 00:00:11.02

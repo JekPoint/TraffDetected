@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source files">
+      <UniqueIdentifier>{7fea68bd-5535-4f0a-bdb7-59629238fe37}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{ba894cb6-1179-414f-b232-578de29dac9f}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource files">
+      <UniqueIdentifier>{c4dacf6c-c6c6-478c-82e8-3696e028bb19}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Make files">
+      <UniqueIdentifier>{409ff323-eab0-4c26-86fa-d6bb11c2d2a0}</UniqueIdentifier>
+      <Extensions>*.mak</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\SharedMemGrabber.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Traff.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Tcl.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\imusoconn.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ini.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\INIReader.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="debug.mak">
+      <Filter>Make files</Filter>
+    </None>
+    <None Include="release.mak">
+      <Filter>Make files</Filter>
+    </None>
+    <None Include="Source\trafflight.py">
+      <Filter>Source files</Filter>
+    </None>
+    <None Include="Source\trafflight.html">
+      <Filter>Source files</Filter>
+    </None>
+    <None Include="Source\trafflight.js">
+      <Filter>Source files</Filter>
+    </None>
+    <None Include="Source\jquery.imgareaselect.js">
+      <Filter>Source files</Filter>
+    </None>
+    <None Include="Source\jquery.imgareaselect.min.js">
+      <Filter>Source files</Filter>
+    </None>
+    <None Include="Source\jquery.imgareaselect.pack.js">
+      <Filter>Source files</Filter>
+    </None>
+    <None Include="Source\jquery.min.js">
+      <Filter>Source files</Filter>
+    </None>
+    <None Include="Source\Traff.ini">
+      <Filter>Source files</Filter>
+    </None>
+    <None Include="Source\trafconn.conf">
+      <Filter>Source files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\SharedMemGrabber.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Traffstate.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Tcl.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Histogram1D.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\imusoconn.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ini.h">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\INIReader.h">
+      <Filter>Source files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<link rel="stylesheet" type="text/css" href="/static/css/imgareaselect-animated.css" />
+<script type="text/javascript" src="/static/js/trafflight.js"></script>
+<script type="text/javascript" src="/static/js/jquery.min.js"></script>
+<script type="text/javascript" src="/static/js/jquery.imgareaselect.pack.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#traffin').imgAreaSelect({ aspectRatio: '1:1', handles: true, fadeSpeed: 200, onSelectChange: preview });
+    });
+    $().ready(function () {        
+        ChannelLoad({{ channelinputid }});
+    });
+</script>
+
+<div class="panel panel-default">
+    <div class="panel-heading">  Настройки детектора светофоров </div>
+    <div style="float:left; width:80px">
+        Видеовход: 
+        <select id="channelinput" class="form-control az-tl-input" onchange="ChannelChange(this);" >
+            {% for i in range(8) %}
+                {% if i == channelinputid %}
+                    <option value="{{ i  }}" selected> Канал {{ i+1 }} </option>
+                {% else %}
+                    <option value="{{ i  }}"> Канал {{ i+1 }} </option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        Настройки каналов
+        <table>
+            <tr>
+                <td>
+                    <div>Детектор:</div>
+                    <select id="channeldetect" onchange="getDetectChannelParams(this);">
+                        {% for i in range(5) %}
+                        <option value="{{ i+1  }}"> Канал {{ i+1 }} </option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <div>Канал TCL:</div>
+                    <select id="channeltcl">
+                        {% for i in range(8) %}
+                        <option value="{{ i  }}"> Канал {{ i+1 }} </option>
+                        {% endfor %}
+                    </select><br>
+                </td>
+            </tr>
+        </table>
+    
+
+            <div>
+                <div class="az-cz-lbl" style="width:75px">Тип:</div>            
+                    <select id="channeltype">
+                        <option value="0"> Отключен </option>  
+                        <option value="1"> Красный  </option>
+                        <option value="2"> Жёлтый   </option>
+                        <option value="3"> Зелёный  </option>
+                        <option value="4"> Стрелка  </option>
+                    </select><br>
+               
+
+                <div class="az-cz-lbl" style="width:75px">x1:</div>             <input class="form-control az-cz-input az-inline" id="x1" type="number" ><br>
+                <div class="az-cz-lbl" style="width:75px">y1:</div>             <input class="form-control az-cz-input az-inline" id="y1" type="number" ><br>
+                <div class="az-cz-lbl" style="width:75px">x2:</div>             <input class="form-control az-cz-input az-inline" id="x2" type="number" ><br>
+                <div class="az-cz-lbl" style="width:75px">y2:</div>             <input class="form-control az-cz-input az-inline" id="y2" type="number" ><br>
+                <div class="az-cz-lbl" style="width:75px">Width:</div>          <input class="form-control az-cz-input az-inline" id="width" type="number" ><br>
+                <div class="az-cz-lbl" style="width:75px">Height:</div>         <input class="form-control az-cz-input az-inline" id="height" type="number" ><br>
+            </div>
+        {% if isadmin %}
+        <button onclick="saveSettings()" class="btn btn-default">
+            Добавить
+        </button>
+        {% endif %}
+    </div>
+
+        <div style="float:left">
+        <table style="width:100%; height: 288px">
+            <tr>
+                <td>  
+                    <img id="traffin" style="width:inherit; height:inherit; vertical-align:top" src=""> 
+                </td>
+                <td>
+                    <img id="TraffVideo" style="width:inherit; height:inherit; vertical-align:top" src="/video?channel=23">
+                </td>
+                <td>
+                    <div class="frame" style="margin: 0 1em; width: 200px; height: 200px;">
+                        <div id="preview" style="width: 200px; height: 200px; overflow: hidden;">
+                            <img id="SelectVideoImg" style="width:inherit; height:inherit; vertical-align:top" src="">
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
